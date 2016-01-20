@@ -35,6 +35,12 @@ public class Application extends SpringBootServletInitializer {
     @Value("${config.oauth2.clientSecret}")
     private String clientSecret;
 
+    @Value("${config.oauth2.preEstablishedRedirectUri}")
+    private String preEstablishedRedirectUri;
+
+    @Value("${config.oauth2.useCurrentUri}")
+    private boolean useCurrentUri;
+
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
@@ -64,6 +70,8 @@ public class Application extends SpringBootServletInitializer {
         AuthorizationCodeResourceDetails resource = new AuthorizationCodeResourceDetails();
         resource.setClientId(clientID);
         resource.setClientSecret(clientSecret);
+        resource.setPreEstablishedRedirectUri(preEstablishedRedirectUri);
+        resource.setUseCurrentUri(useCurrentUri);
         resource.setAccessTokenUri(accessTokenUri);
         resource.setUserAuthorizationUri(userAuthorizationUri);
         resource.setScope(Arrays.asList("read"));
