@@ -13,3 +13,5 @@ config:
         accessTokenUri: http://localhost:8081/oauth/token
         userAuthorizationUri: http://localhost:8081/oauth/authorize
         resourceURI: http://localhost:8082/api/
+        preEstablishedRedirectUri: http://localhost:8070/client
+        useCurrentUri: true
