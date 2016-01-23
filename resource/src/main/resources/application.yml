@@ -1,12 +1,22 @@
 server:
     port: 8082
     contextPath: /api
-        
+
 security:
     oauth2:
+        # Even though you are a resource server you need the client id if you want to use the JWT token for 
+        # for the validation information.
+        client:
+            client-id: AFT
+            client-secret: secret
         resource:
             jwt:
-                # Tells the JWT framework to fetch the public key from the authorization server during startup
-                # Note: The authorization server needs to be running...
+                # You need one of the two - a remote token uri or a local token key
                 key-uri: "http://localhost:8081/oauth/token_key"
-
+                key-value: |
+                    -----BEGIN PUBLIC KEY-----
+                    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDNQZKqTlO/+2b4ZdhqGJzGBDlt
+                    b5PZmBz1ALN2YLvt341pH6i5mO1V9cX5Ty1LM70fKfnIoYUP4KCE33dPnC7LkUwE
+                    /myh1zM6m8cbL5cYFPyP099thbVxzJkjHWqywvQih/qOOjliomKbM9pxG8Z1dB26
+                    hL9dSAZuA8xExjlPmQIDAQAB
+                    -----END PUBLIC KEY-----

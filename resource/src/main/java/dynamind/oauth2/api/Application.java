@@ -16,40 +16,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.access.expression.DenyAllPermissionEvaluator;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
-import org.springframework.util.FileCopyUtils;
-
-import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
-import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
-import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
-
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @SpringBootApplication
-//@EnableResourceServer
+@EnableResourceServer
 public class Application extends SpringBootServletInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(Application.class);
+
 
     public static void main(String[] args) {
         ApplicationContext context = SpringApplication.run(Application.class, args);
@@ -59,13 +35,15 @@ public class Application extends SpringBootServletInitializer {
      * An opinionated WebApplicationInitializer to run a SpringApplication from a traditional WAR deployment.
      * Binds Servlet, Filter and ServletContextInitializer beans from the application context to the servlet container.
      *
-     * @link http://docs.spring.io/spring-boot/docs/current/api/index.html?org/springframework/boot/context/web/SpringBootServletInitializer.html
      */
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         return application.sources(Application.class);
     }
 
+    /**
+     * Configure so all end points are protected by default and turn off (for testing purposes) CSRF checks.
+     */
     @Configuration
     @EnableWebSecurity
     @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -77,72 +55,9 @@ public class Application extends SpringBootServletInitializer {
                     .authorizeRequests().anyRequest().authenticated()
                     .and()
                     .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER)
-            .and()
-                .csrf().disable()
+                    .and()
+                    .csrf().disable()
             ;
         }
     }
-
-
-    @Configuration
-    @EnableAuthorizationServer
-    protected static class OAuth2Config extends
-            AuthorizationServerConfigurerAdapter {
-
-        @Autowired
-        private AuthenticationManager authenticationManager;
-
-        @Bean
-        public JwtAccessTokenConverter accessTokenConverter() {
-            return new JwtAccessTokenConverter();
-        }
-
-        // ---------------
-        @Bean
-        public JwtAccessTokenConverter tokenEnhancer() {
-            final JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-            jwtAccessTokenConverter.setSigningKey("abcde");
-            return jwtAccessTokenConverter;
-        }
-
-        // --------------
-        @Override
-        public void configure(AuthorizationServerSecurityConfigurer oauthServer)
-                throws Exception {
-            oauthServer.tokenKeyAccess(
-                    "isAnonymous() || hasAuthority('ROLE_TRUSTED_CLIENT')")
-                    .checkTokenAccess("hasAuthority('ROLE_TRUSTED_CLIENT')");
-        }
-
-        @Override
-        public void configure(AuthorizationServerEndpointsConfigurer endpoints)
-                throws Exception {
-            endpoints.authenticationManager(authenticationManager)
-                    .accessTokenConverter(accessTokenConverter());
-        }
-
-        @Override
-        public void configure(ClientDetailsServiceConfigurer clients)
-                throws Exception {
-            // @formatter:off
-            clients.inMemory()
-                    .withClient("my-trusted-client")
-                    .authorizedGrantTypes("password", "authorization_code",
-                            "refresh_token", "implicit")
-                    .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-                    .scopes("read", "write", "trust")
-                    .accessTokenValiditySeconds(120).and()
-                    .withClient("my-client-with-registered-redirect")
-                    .authorizedGrantTypes("authorization_code")
-                    .authorities("ROLE_CLIENT").scopes("read", "trust")
-                    .redirectUris("http://google.com").and()
-                    .withClient("my-client-with-secret")
-                    .authorizedGrantTypes("client_credentials", "password")
-                    .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-                    .scopes("read", "write").secret("secret");
-            // @formatter:on
-        }
-
-    }
-
 }
